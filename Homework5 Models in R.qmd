@@ -74,6 +74,13 @@ Based on this plot, an interaction model is more appropriate because the two lin
 
 ### Task Four: Testing and Training
 
+```{r}
+set.seed(101)
+heart_split <- initial_split(new_heart, prop = 0.80)
+heart_train <- training(heart_split)
+heart_test <- testing(heart_split)
+```
+
 ### Task Five: OLS and LASSO
 
 ### Task Six: Logistic Regression
