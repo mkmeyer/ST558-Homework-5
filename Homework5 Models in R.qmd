@@ -36,7 +36,27 @@ library("yardstick")
 heartdata <- read.csv("heart.csv")
 ```
 
-```{r}
+### Question One
 
+```{r}
+summary(heartdata)
+```
+
+#### a. What type of variable (in R) is Heart Disease? Categorical or Quantitative?
+
+Heart Disease is a numerical (integer) variable. It is quantitative rather than categorical. We know this because a numerical summary is presented for the Heart Disease variable. 
+
+#### b. Does this make sense? Why or why not.
+
+This does not make sense because a person has either been diagnosed with heart disease or they have not. 
+
+### Question Two
+
+```{r}
+new_heart <- heartdata |>
+  mutate(new_hd = as.factor(HeartDisease)) |>
+  select(-c(ST_Slope, HeartDisease))
+
+summary(new_heart)
 ```
 
