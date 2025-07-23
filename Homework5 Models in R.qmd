@@ -1,0 +1,42 @@
+---
+title: "Homework5 Models in R"
+format: pdf
+editor: visual
+---
+
+```{r, include=FALSE}
+rm(list=ls())
+```
+
+## Task One: Conceptual Questions
+
+### Question One: What is the purpose of using cross-validation when fitting a random forest model?
+
+### Question Two: Describe the bagged tree algorithm.
+
+### Question Three: What is meant by a general linear model?
+
+### Question Four: When fitting a multiple linear regression model, what does adding an interaction term
+do? That is, what does it allow the model to do differently as compared to when it is
+not included in the model?
+
+### Question Five: Why do we split our data into a training and test set?
+
+
+## Task Two: Data Prep
+
+### Packages and data
+
+```{r, warning=FALSE, message=FALSE}
+library("tidyverse")
+library("tidymodels")
+library("caret")
+library("yardstick")
+
+heartdata <- read.csv("heart.csv")
+```
+
+```{r}
+
+```
+
