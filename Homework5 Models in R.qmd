@@ -56,7 +56,24 @@ This does not make sense because a person has either been diagnosed with heart d
 new_heart <- heartdata |>
   mutate(new_hd = as.factor(HeartDisease)) |>
   select(-c(ST_Slope, HeartDisease))
-
-summary(new_heart)
 ```
 
+### Task Three: EDA
+
+#### Question One
+
+```{r}
+g <- ggplot(new_heart, aes(x = MaxHR, y = Age, color = new_hd)) + geom_point() + geom_smooth(method=lm, se=FALSE) + labs(title = "Age by Max Heart Rate", x = "Max Heart Rate", y = "Age")
+g
+```
+
+#### Question Two: Based on visual evidence, do you think an interaction model or an additive model is
+more appropriate? Justify your answer.
+
+Based on this plot, an interaction model is more appropriate because the two lines are not parallel. That indicates that whether or not heart disease is present impacts the effect that maximum heart rate has on our response variable age.
+
+### Task Four: Testing and Training
+
+### Task Five: OLS and LASSO
+
+### Task Six: Logistic Regression
