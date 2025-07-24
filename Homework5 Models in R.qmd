@@ -31,6 +31,7 @@ An interaction term allows the model to account for the fact that the impact of 
 
 Splitting into a training and test set is important to maintain independence. If a model is trained and tested on the same data, it is obvious that the model will be a good fit to that data. We are actually curious about how the model performs on new data, so it is important to choose either to use the data for training or for testing but not both. 
 
+\newpage
 ## Task Two: Data Prep
 
 ### Packages and data
@@ -69,6 +70,7 @@ new_heart <- heartdata |> #using the initial tibble
   select(-c(ST_Slope, HeartDisease)) #removing ST_Slope and old heart disease variable
 ```
 
+\newpage
 ### Task Three: EDA
 
 #### Question One: Creating a Scatter Plot Corresponding to the Heart Disease Model
@@ -83,6 +85,7 @@ more appropriate? Justify your answer.
 
 Based on this plot, an interaction model is more appropriate because the two lines are not parallel. That indicates that whether or not heart disease is present impacts the effect that maximum heart rate has on our response variable age, and therefore an interaction term is necessary. 
 
+\newpage
 ### Task Four: Testing and Training
 
 ```{r}
@@ -92,6 +95,7 @@ heart_train <- training(heart_split) #splitting training data
 heart_test <- testing(heart_split) #splitting testing data
 ```
 
+\newpage
 ### Task Five: OLS and LASSO
 
 #### Question One: Fitting an OLS Interation Model
@@ -179,4 +183,70 @@ These values are extremely similar (off by just about 0.01)
 
 #### Question Seven: Why are the RMSE calculations roughly the same if the coefficients for each model are different?
 
+\newpage
 ### Task Six: Logistic Regression
+
+#### Question One: Proposing two different logistic models
+
+```{r}
+#Creating the spec for logistic models
+LR_spec <- logistic_reg() |>
+  set_engine("glm")
+```
+
+```{r}
+#Creating the first logistic model using Resting Blood Pressure, Sex, and Cholesterol as predictors
+LR1_rec <- recipe(new_hd ~ RestingBP + Cholesterol + Sex, data = heart_train) |>
+  step_normalize(all_numeric()) |>
+  step_dummy(Sex)
+
+LR1_wkf <- workflow() |>
+  add_recipe(LR1_rec) |>
+  add_model(LR_spec)
+
+LR1_fit <- LR1_wkf |>
+  fit_resamples(heart_cv_folds, metrics = metric_set(accuracy, mn_log_loss))
+```
+
+```{r}
+#Creating the first logistic model using Max heart rate, Age, and Sex as predictors
+LR2_rec <- recipe(new_hd ~ MaxHR + Age + Sex, data = heart_train) |>
+  step_normalize(Age, MaxHR) |>
+  step_dummy(Sex)
+
+LR2_wkf <- workflow() |>
+  add_recipe(LR2_rec) |>
+  add_model(LR_spec)
+
+LR2_fit <- LR2_wkf |>
+  fit_resamples(heart_cv_folds, metrics = metric_set(accuracy, mn_log_loss))
+```
+
+```{r}
+rbind(LR1_fit |> collect_metrics(),
+      LR2_fit |> collect_metrics()) |>
+  mutate(Model = c("Model1", "Model1", "Model2", "Model2")) |>
+  select(Model, everything())
+```
+
+Based on the accuracy and log loss metrics above, Model 2 is a better model. This is because it has both a higher accuracy and a lower log loss. Model 2 predicts heart disease based off of Max heart rate, age, and sex. Model 2 only shared the sex predictor in common with Model 1 which used resting blood pressure and cholesterol as predictors. This is a significant finding because it indicates that Max HR and Age are potentially better predictors than Blood Pressure and Cholesterol. 
+
+#### Question Two: Lastly, check how well your chosen model does on the test set using the confusionMatrix() function.
+
+```{r}
+LR_train_fit <- LR2_wkf |>
+  fit(heart_train) 
+
+conf_mat(heart_test |>
+           mutate(estimate = LR_train_fit |>
+                    predict(heart_test) |>
+                    pull()),
+         new_hd,
+         estimate)
+```
+
+This confusion matrix shows that my model correctly predicted no heart disease diagnosis in 62 out of 94 cases. My model correctly predicted a heart disease diagnosis in 70 out of 90 heart disease cases. My model seems to do about as well at predicting heart disease cases vs predicting non-heart disease cases, but is maybe slightly better at predicting heart disease cases. 
+
+#### Question Three: Next, identify the values of sensitivity and specificity, and interpret them in the context of the problem.
+
+Sensitivity is probability that a test correctly detects a disease when it is truly present and is calculated by (# positive and test positive)/# total positive. In this context, sensitivity describes the probability of the model accurately detecting heart disease when a person is known to be diagnosed with heart disease. My model correctly predicted a heart disease diagnosis in 70 out of 90 heart disease cases. This is a sensitivity rate of 70/90 = 77.78%. Sensitivity is the probability that a test correctly does not detect disease when it is truly absent and is calculated by (# negative and test negative)/# total negative. In this context, specificity describes the probability of the model accurately not detecting heart disease when a person is known to not be diagnosed with heart disease. This confusion matrix shows that my model correctly predicted no heart disease diagnosis in 62 out of 94 cases. This is a specificity rate of 62/94 = 65.96%. 
