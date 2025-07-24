@@ -1,5 +1,6 @@
 ---
 title: "Homework5 Models in R"
+author: Makenna Meyer
 format: pdf
 editor: visual
 ---
@@ -71,22 +72,32 @@ new_heart <- heartdata |> #using the initial tibble
 ```
 
 \newpage
-### Task Three: EDA
+## Task Three: EDA
 
-#### Question One: Creating a Scatter Plot Corresponding to the Heart Disease Model
+### Question One: Creating a Scatter Plot Corresponding to the Heart Disease Model
 
 ```{r}
-g <- ggplot(new_heart, aes(x = MaxHR, y = Age, color = new_hd)) + geom_point() + geom_smooth(method=lm, se=FALSE) + labs(title = "Age by Max Heart Rate", x = "Max Heart Rate", y = "Age")
+#Identifying potential colorblind friendly palettes from R Color Brewer
+library("RColorBrewer")
+display.brewer.all(colorblindFriendly = TRUE)
+```
+
+
+```{r}
+g <- ggplot(new_heart, aes(x = MaxHR, y = Age, color = new_hd)) + #Plot Base
+  geom_point() + #Creating a scatterplot
+  geom_smooth(method=lm, se=FALSE) + #Adding lines
+  labs(title = "Age by Max Heart Rate", x = "Max Heart Rate", y = "Age") + #Labels
+  scale_color_brewer(palette = "Set2") #Colorblind friendly palette from R Color Brewer
 g
 ```
 
-#### Question Two: Based on visual evidence, do you think an interaction model or an additive model is
-more appropriate? Justify your answer.
+### Question Two: Based on visual evidence, do you think an interaction model or an additive model is more appropriate? Justify your answer.
 
 Based on this plot, an interaction model is more appropriate because the two lines are not parallel. That indicates that whether or not heart disease is present impacts the effect that maximum heart rate has on our response variable age, and therefore an interaction term is necessary. 
 
 \newpage
-### Task Four: Testing and Training
+## Task Four: Testing and Training
 
 ```{r}
 set.seed(101) #setting a random seed so this process can be duplicated
@@ -96,9 +107,9 @@ heart_test <- testing(heart_split) #splitting testing data
 ```
 
 \newpage
-### Task Five: OLS and LASSO
+## Task Five: OLS and LASSO
 
-#### Question One: Fitting an OLS Interation Model
+### Question One: Fitting an OLS Interation Model
 
 ```{r}
 #fitting an interaction model using the training data
@@ -108,14 +119,15 @@ ols_mlr <- lm(Age ~ MaxHR + new_hd + MaxHR:new_hd, data = heart_train)
 summary(ols_mlr) 
 ```
 
-#### Question Two: Calculating the RMSE for the OLS Interaction Model
+### Question Two: Calculating the RMSE for the OLS Interaction Model
 
 ```{r}
+#Calculating RMSE using the testing data
 RMSE_calc <- sqrt(mean((heart_test$Age - predict(ols_mlr, newdata=heart_test))^2))
 RMSE_calc
 ```
 
-#### Question Three: Fitting a LASSO Model
+### Question Three: Fitting a LASSO Model
 
 ```{r}
 heart_cv_folds <- vfold_cv(heart_train, 10) #creating 10 fold CV of the training data
@@ -128,7 +140,7 @@ LASSO_recipe <- recipe(Age ~ MaxHR + new_hd, data = heart_train) |>
 LASSO_recipe
 ```
 
-#### Question Four: Now, set up your appropriate spec, and grid. Next, select your final model, and report the results using the tidy() function around your model name.
+### Question Four: Now, set up your appropriate spec, and grid. Next, select your final model, and report the results using the tidy() function around your model name.
 
 ```{r}
 #Creating LASSO spec
@@ -142,7 +154,8 @@ LASSO_wkf <- workflow () |>
 
 #Creating LASSO grid
 LASSO_grid <- LASSO_wkf |>
-  tune_grid(resamples = heart_cv_folds, grid = grid_regular(penalty(), levels = 200))
+  tune_grid(resamples = heart_cv_folds, 
+            grid = grid_regular(penalty(), levels = 200))
 
 #Finding the lowest RMSE for all 200 LASSO models
 lowest_rmse <- LASSO_grid |>
@@ -156,11 +169,11 @@ LASSO_final <- LASSO_wkf |>
 tidy(LASSO_final)
 ```
 
-#### Question Five: Without looking at the RMSE calculations, would you expect the RMSE calculations to be roughly the same or different? Justify your answer using output from your LASSO model.
+### Question Five: Without looking at the RMSE calculations, would you expect the RMSE calculations to be roughly the same or different? Justify your answer using output from your LASSO model.
 
 Without looking, I would expect the RMSE values very similar because the tuning parameter penalty is just 0.017 so it is fairly close to 0. 
 
-#### Question Six: Now compare the RMSE between your OLS and LASSO model and show that the RMSE calculations were roughly the same.
+### Question Six: Now compare the RMSE between your OLS and LASSO model and show that the RMSE calculations were roughly the same.
 
 The RMSE from the OLS Interaction Model was
 
@@ -181,12 +194,14 @@ LASSO_final |>
 
 These values are extremely similar (off by just about 0.01)
 
-#### Question Seven: Why are the RMSE calculations roughly the same if the coefficients for each model are different?
+### Question Seven: Why are the RMSE calculations roughly the same if the coefficients for each model are different?
+
+The RMSE calculation are still roughly the same because the tuning parameter value is very close to 0 so the coefficients shouldn't have changed very much. 
 
 \newpage
-### Task Six: Logistic Regression
+## Task Six: Logistic Regression
 
-#### Question One: Proposing two different logistic models
+### Question One: Proposing two different logistic models
 
 ```{r}
 #Creating the spec for logistic models
@@ -195,7 +210,8 @@ LR_spec <- logistic_reg() |>
 ```
 
 ```{r}
-#Creating the first logistic model using Resting Blood Pressure, Sex, and Cholesterol as predictors
+#Creating the first logistic model using 
+#Resting Blood Pressure, Sex, and Cholesterol as predictors
 LR1_rec <- recipe(new_hd ~ RestingBP + Cholesterol + Sex, data = heart_train) |>
   step_normalize(all_numeric()) |>
   step_dummy(Sex)
@@ -209,7 +225,8 @@ LR1_fit <- LR1_wkf |>
 ```
 
 ```{r}
-#Creating the first logistic model using Max heart rate, Age, and Sex as predictors
+#Creating the first logistic model using 
+#Max heart rate, Age, and Sex as predictors
 LR2_rec <- recipe(new_hd ~ MaxHR + Age + Sex, data = heart_train) |>
   step_normalize(Age, MaxHR) |>
   step_dummy(Sex)
@@ -231,7 +248,7 @@ rbind(LR1_fit |> collect_metrics(),
 
 Based on the accuracy and log loss metrics above, Model 2 is a better model. This is because it has both a higher accuracy and a lower log loss. Model 2 predicts heart disease based off of Max heart rate, age, and sex. Model 2 only shared the sex predictor in common with Model 1 which used resting blood pressure and cholesterol as predictors. This is a significant finding because it indicates that Max HR and Age are potentially better predictors than Blood Pressure and Cholesterol. 
 
-#### Question Two: Lastly, check how well your chosen model does on the test set using the confusionMatrix() function.
+### Question Two: Lastly, check how well your chosen model does on the test set using the confusionMatrix() function.
 
 ```{r}
 LR_train_fit <- LR2_wkf |>
@@ -247,6 +264,6 @@ conf_mat(heart_test |>
 
 This confusion matrix shows that my model correctly predicted no heart disease diagnosis in 62 out of 94 cases. My model correctly predicted a heart disease diagnosis in 70 out of 90 heart disease cases. My model seems to do about as well at predicting heart disease cases vs predicting non-heart disease cases, but is maybe slightly better at predicting heart disease cases. 
 
-#### Question Three: Next, identify the values of sensitivity and specificity, and interpret them in the context of the problem.
+### Question Three: Next, identify the values of sensitivity and specificity, and interpret them in the context of the problem.
 
-Sensitivity is probability that a test correctly detects a disease when it is truly present and is calculated by (# positive and test positive)/# total positive. In this context, sensitivity describes the probability of the model accurately detecting heart disease when a person is known to be diagnosed with heart disease. My model correctly predicted a heart disease diagnosis in 70 out of 90 heart disease cases. This is a sensitivity rate of 70/90 = 77.78%. Sensitivity is the probability that a test correctly does not detect disease when it is truly absent and is calculated by (# negative and test negative)/# total negative. In this context, specificity describes the probability of the model accurately not detecting heart disease when a person is known to not be diagnosed with heart disease. This confusion matrix shows that my model correctly predicted no heart disease diagnosis in 62 out of 94 cases. This is a specificity rate of 62/94 = 65.96%. 
+Sensitivity is probability that a test correctly detects a disease when it is truly present and is calculated by (# positive and test positive)/# total positive. In this context, sensitivity describes the probability of the model accurately detecting heart disease when a person is known to be diagnosed with heart disease. My model correctly predicted a heart disease diagnosis in 70 out of 90 heart disease cases. This is a sensitivity rate of 70/90 = 0.7778 = 77.78%. Sensitivity is the probability that a test correctly does not detect disease when it is truly absent and is calculated by (# negative and test negative)/# total negative. In this context, specificity describes the probability of the model accurately not detecting heart disease when a person is known to not be diagnosed with heart disease. This confusion matrix shows that my model correctly predicted no heart disease diagnosis in 62 out of 94 cases. This is a specificity rate of 62/94 = 0.6596 = 65.96%. 
