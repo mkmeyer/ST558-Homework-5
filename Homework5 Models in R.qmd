@@ -5,6 +5,7 @@ editor: visual
 ---
 
 ```{r, include=FALSE}
+#Clearing the working environment
 rm(list=ls())
 ```
 
@@ -35,34 +36,37 @@ Splitting into a training and test set is important to maintain independence. If
 ### Packages and data
 
 ```{r, warning=FALSE, message=FALSE}
+#loading required packages
 library("tidyverse")
 library("tidymodels")
 library("caret")
 library("yardstick")
 
-heartdata <- read.csv("heart.csv")
+#reading in the heart data
+heartdata <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/heart.csv")
 ```
 
 ### Question One
 
 ```{r}
-summary(heartdata)
+summary(heartdata) #creating a summary for all variables in the heart data
 ```
 
 #### a. What type of variable (in R) is Heart Disease? Categorical or Quantitative?
 
-Heart Disease is a numerical (integer) variable. It is quantitative rather than categorical. We know this because a numerical summary is presented for the Heart Disease variable. 
+Heart Disease is a numerical (integer) variable. It is quantitative rather than categorical, and R is assuming that all numeric values between 0 and 1 are valid. We know this because a numerical summary is presented for the Heart Disease variable. 
 
 #### b. Does this make sense? Why or why not.
 
-This does not make sense because a person has either been diagnosed with heart disease or they have not. 
+This does not make sense because a person has either been diagnosed with heart disease or they have not. Therefore, Heart Disease should be a categorical variable rather than a numeric. Heart Disease should be a factor variable with the levels 1 (indicating the person has been diagnosed with heart disease) and 0 (indicating the person has not been diagnosed with heart disease).
 
 ### Question Two
 
 ```{r}
-new_heart <- heartdata |>
-  mutate(new_hd = as.factor(HeartDisease)) |>
-  select(-c(ST_Slope, HeartDisease))
+#Creating a new heart tibble
+new_heart <- heartdata |> #using the initial tibble
+  mutate(new_hd = as.factor(HeartDisease)) |> #creating a new factor heart disease variable
+  select(-c(ST_Slope, HeartDisease)) #removing ST_Slope and old heart disease variable
 ```
 
 ### Task Three: EDA
@@ -77,15 +81,15 @@ g
 #### Question Two: Based on visual evidence, do you think an interaction model or an additive model is
 more appropriate? Justify your answer.
 
-Based on this plot, an interaction model is more appropriate because the two lines are not parallel. That indicates that whether or not heart disease is present impacts the effect that maximum heart rate has on our response variable age.
+Based on this plot, an interaction model is more appropriate because the two lines are not parallel. That indicates that whether or not heart disease is present impacts the effect that maximum heart rate has on our response variable age, and therefore an interaction term is necessary. 
 
 ### Task Four: Testing and Training
 
 ```{r}
-set.seed(101)
-heart_split <- initial_split(new_heart, prop = 0.80)
-heart_train <- training(heart_split)
-heart_test <- testing(heart_split)
+set.seed(101) #setting a random seed so this process can be duplicated
+heart_split <- initial_split(new_heart, prop = 0.80) #specifying a 80/20 split
+heart_train <- training(heart_split) #splitting training data
+heart_test <- testing(heart_split) #splitting testing data
 ```
 
 ### Task Five: OLS and LASSO
