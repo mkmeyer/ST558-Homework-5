@@ -46,7 +46,7 @@ library("yardstick")
 heartdata <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/heart.csv")
 ```
 
-### Question One
+### Question One: Summarizing the heart data
 
 ```{r}
 summary(heartdata) #creating a summary for all variables in the heart data
@@ -60,7 +60,7 @@ Heart Disease is a numerical (integer) variable. It is quantitative rather than 
 
 This does not make sense because a person has either been diagnosed with heart disease or they have not. Therefore, Heart Disease should be a categorical variable rather than a numeric. Heart Disease should be a factor variable with the levels 1 (indicating the person has been diagnosed with heart disease) and 0 (indicating the person has not been diagnosed with heart disease).
 
-### Question Two
+### Question Two: Managing and cleaning the heart data
 
 ```{r}
 #Creating a new heart tibble
@@ -71,7 +71,7 @@ new_heart <- heartdata |> #using the initial tibble
 
 ### Task Three: EDA
 
-#### Question One
+#### Question One: Creating a Scatter Plot Corresponding to the Heart Disease Model
 
 ```{r}
 g <- ggplot(new_heart, aes(x = MaxHR, y = Age, color = new_hd)) + geom_point() + geom_smooth(method=lm, se=FALSE) + labs(title = "Age by Max Heart Rate", x = "Max Heart Rate", y = "Age")
@@ -94,17 +94,89 @@ heart_test <- testing(heart_split) #splitting testing data
 
 ### Task Five: OLS and LASSO
 
-```{r}
-ols_mlr <- lm(Age ~ MaxHR + new_hd + MaxHR:new_hd, data = new_heart)
+#### Question One: Fitting an OLS Interation Model
 
-summary(ols_mlr)
+```{r}
+#fitting an interaction model using the training data
+ols_mlr <- lm(Age ~ MaxHR + new_hd + MaxHR:new_hd, data = heart_train)
+
+#displaying the model summary
+summary(ols_mlr) 
 ```
 
+#### Question Two: Calculating the RMSE for the OLS Interaction Model
+
 ```{r}
-RMSE_calc <- sqrt(mean((heart_test$Age - predict(ols_mlr))^2))
+RMSE_calc <- sqrt(mean((heart_test$Age - predict(ols_mlr, newdata=heart_test))^2))
 RMSE_calc
 ```
 
+#### Question Three: Fitting a LASSO Model
 
+```{r}
+heart_cv_folds <- vfold_cv(heart_train, 10) #creating 10 fold CV of the training data
+
+LASSO_recipe <- recipe(Age ~ MaxHR + new_hd, data = heart_train) |>
+  step_normalize(MaxHR) |> #standardizing the quantitative variable
+  step_dummy(new_hd) |> #standardizing the categorical variable
+  step_interact(~MaxHR:starts_with("new_hd")) #creating the interaction 
+
+LASSO_recipe
+```
+
+#### Question Four: Now, set up your appropriate spec, and grid. Next, select your final model, and report the results using the tidy() function around your model name.
+
+```{r}
+#Creating LASSO spec
+LASSO_spec <- linear_reg(penalty = tune(), mixture = 1) |>
+  set_engine("glmnet")
+
+#Creating LASSO workflow
+LASSO_wkf <- workflow () |>
+  add_recipe(LASSO_recipe) |>
+  add_model(LASSO_spec)
+
+#Creating LASSO grid
+LASSO_grid <- LASSO_wkf |>
+  tune_grid(resamples = heart_cv_folds, grid = grid_regular(penalty(), levels = 200))
+
+#Finding the lowest RMSE for all 200 LASSO models
+lowest_rmse <- LASSO_grid |>
+  select_best(metric = "rmse")
+
+#Fitting the best model on the entire training dataset
+LASSO_final <- LASSO_wkf |>
+  finalize_workflow(lowest_rmse) |>
+  fit(heart_train)
+
+tidy(LASSO_final)
+```
+
+#### Question Five: Without looking at the RMSE calculations, would you expect the RMSE calculations to be roughly the same or different? Justify your answer using output from your LASSO model.
+
+Without looking, I would expect the RMSE values very similar because the tuning parameter penalty is just 0.017 so it is fairly close to 0. 
+
+#### Question Six: Now compare the RMSE between your OLS and LASSO model and show that the RMSE calculations were roughly the same.
+
+The RMSE from the OLS Interaction Model was
+
+```{r}
+#Reprinting saved calculated RMSE value for the OLS model
+RMSE_calc
+```
+
+The RMSE from the LASSO model is
+
+```{r}
+#Calculating the RMSE of the LASSO model
+LASSO_final |>
+  predict(heart_test) |>
+  pull() |>
+  rmse_vec(truth = heart_test$Age)
+```
+
+These values are extremely similar (off by just about 0.01)
+
+#### Question Seven: Why are the RMSE calculations roughly the same if the coefficients for each model are different?
 
 ### Task Six: Logistic Regression
