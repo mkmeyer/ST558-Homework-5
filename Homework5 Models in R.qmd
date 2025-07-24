@@ -12,16 +12,23 @@ rm(list=ls())
 
 ### Question One: What is the purpose of using cross-validation when fitting a random forest model?
 
+Cross-validation allows us to make use of the entire dataset that we have access to. It does this by creating equal sections of data (called "folds") and alternating which single fold is used for testing and what folds are grouped together for training. This reduces the chance of getting a weird model due to a weird training/testing split and gives a less variable estimate of the model since it uses more (all) of the data. 
+
 ### Question Two: Describe the bagged tree algorithm.
+
+A bagged tree algorithm means that bootstrap aggregation is used in addition to the standard tree algorithm. Bootstrapping means that we are resampling either from the data (non-parametric) or from a fitted model (parametric). For each resample, we have a certain fitted tree. We can then use each tree to come up with a prediction, and then we can take the average of all of the predictions from all of our trees to create a final prediction. 
 
 ### Question Three: What is meant by a general linear model?
 
-### Question Four: When fitting a multiple linear regression model, what does adding an interaction term
-do? That is, what does it allow the model to do differently as compared to when it is
-not included in the model?
+A general linear model does not necessarily assume that there is a linear relationship between the explanatory variable(s) and the response, but it assumes that there is a linear relationship between the explanatory variable(s) and the transformed response. This transformation is also referred to as the link function.
+
+### Question Four: When fitting a multiple linear regression model, what does adding an interaction term do? That is, what does it allow the model to do differently as compared to when it is not included in the model?
+
+An interaction term allows the model to account for the fact that the impact of an explanatory variable A on the response Y may be different at different levels of another explanatory variable B. Otherwise, the impacts of the two explanatory variables A and B will be independent and constant regardless of each other's values. 
 
 ### Question Five: Why do we split our data into a training and test set?
 
+Splitting into a training and test set is important to maintain independence. If a model is trained and tested on the same data, it is obvious that the model will be a good fit to that data. We are actually curious about how the model performs on new data, so it is important to choose either to use the data for training or for testing but not both. 
 
 ## Task Two: Data Prep
 
@@ -82,5 +89,18 @@ heart_test <- testing(heart_split)
 ```
 
 ### Task Five: OLS and LASSO
+
+```{r}
+ols_mlr <- lm(Age ~ MaxHR + new_hd + MaxHR:new_hd, data = new_heart)
+
+summary(ols_mlr)
+```
+
+```{r}
+RMSE_calc <- sqrt(mean((heart_test$Age - predict(ols_mlr))^2))
+RMSE_calc
+```
+
+
 
 ### Task Six: Logistic Regression
